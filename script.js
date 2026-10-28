@@ -1,135 +1,152 @@
-class Tarefa {
-    constructor(descricao) {
-        if (descricao.trim() === "") {
-            throw new Error("A descrição da tarefa não pode estar em branco.");
-        }
-        this.descricao = descricao;
-        this.concluida = false;
-    }
-
-    alternarStatus() {
-        this.concluida = !this.concluida;
+class Produto {
+    constructor(nome, preco, quantidade) {
+        this.nome = nome;
+        this.preco = preco;
+        this.quantidade = quantidade;
     }
 }
 
-const listaDeTarefas = [];
+const listaDeProdutos = [];
+let indiceEdicao = null; // null indica "Modo Cadastro", número indica "Modo Edição"[cite: 6]
 
 // Persistência com localStorage
-const CHAVE_STORAGE = "sistema_lista_tarefas";
+const CHAVE_STORAGE = "sistema_estoque_produtos";
 
 function salvarNoLocalStorage() {
-    const listaEmTexto = JSON.stringify(listaDeTarefas);
-    localStorage.setItem(CHAVE_STORAGE, listaEmTexto);
+    localStorage.setItem(CHAVE_STORAGE, JSON.stringify(listaDeProdutos));
 }
 
 function carregarDoLocalStorage() {
     const dadosSalvos = localStorage.getItem(CHAVE_STORAGE);
-
     if (dadosSalvos) {
-        const tarefasObjetos = JSON.parse(dadosSalvos);
-
-        tarefasObjetos.forEach((t) => {
-            const tarefaInstanciada = new Tarefa(t.descricao);
-            tarefaInstanciada.concluida = t.concluida;
-            listaDeTarefas.push(tarefaInstanciada);
+        const produtosObjetos = JSON.parse(dadosSalvos);
+        produtosObjetos.forEach((p) => {
+            const produtoInstanciado = new Produto(p.nome, p.preco, p.quantidade);
+            listaDeProdutos.push(produtoInstanciado);
         });
     }
 }
 
-const botaoAdicionar = document.getElementById("botao-adicionar");
-const campoTarefa = document.getElementById("campo-tarefa");
+const formProduto = document.getElementById("produto-form");
+const botaoLimparTabela = document.getElementById("limpar-tabela");
 
-botaoAdicionar.addEventListener("click", adicionarNovaTarefa);
+formProduto.addEventListener("submit", function (event) {
+    event.preventDefault();
 
-campoTarefa.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        adicionarNovaTarefa();
+    // 1. Sanitização e Captura de Dados
+    const nome = document.getElementById("nome").value.trim();
+    const preco = parseFloat(document.getElementById("preco").value);
+    const quantidade = parseInt(document.getElementById("quantidade").value);
+
+    // 2. Guard Clause: Validação de Nome
+    if (!nome) {
+        alert("Por favor, informe um nome válido para o produto.");
+        return;
+    }
+
+    // 3. Guard Clause: Validação de Limites Numéricos
+    if (isNaN(preco) || preco <= 0 || isNaN(quantidade) || quantidade <= 0) {
+        alert("O preço e a quantidade devem ser valores numéricos maiores que zero.");
+        return;
+    }
+
+    const novoProduto = new Produto(nome, preco, quantidade);
+
+    // 4. Lógica de Inclusão vs Atualização (Update)
+    if (indiceEdicao === null) {
+        // Modo Inclusão
+        listaDeProdutos.push(novoProduto);
+    } else {
+        // Modo Edição (Update)
+        listaDeProdutos[indiceEdicao] = novoProduto;
+        indiceEdicao = null;
+        document.querySelector(".btn-primary").textContent = "Adicionar Produto";
+    }
+
+    salvarNoLocalStorage();
+    renderizarTabela();
+    formProduto.reset();
+    document.getElementById("nome").focus();
+});
+
+function prepararEdicao(index) {
+    const produto = listaDeProdutos[index];
+
+    // Preenche os campos do formulário com os dados existentes
+    document.getElementById("nome").value = produto.nome;
+    document.getElementById("preco").value = produto.preco;
+    document.getElementById("quantidade").value = produto.quantidade;
+
+    // Transfere o estado para Modo Edição e atualiza a interface
+    indiceEdicao = index;
+    document.querySelector(".btn-primary").textContent = "Salvar Alterações";
+    document.getElementById("nome").focus();
+}
+
+function removerProduto(index) {
+    listaDeProdutos.splice(index, 1);
+
+    // Se o item que está sendo editado for removido, cancela a edição
+    if (indiceEdicao === index) {
+        indiceEdicao = null;
+        document.querySelector(".btn-primary").textContent = "Adicionar Produto";
+        formProduto.reset();
+    } else if (indiceEdicao > index) {
+        indiceEdicao--;
+    }
+
+    salvarNoLocalStorage();
+    renderizarTabela();
+}
+
+
+botaoLimparTabela.addEventListener("click", () => {
+    if (confirm("Tem certeza que deseja limpar todos os produtos?")) {
+        listaDeProdutos.length = 0;
+        indiceEdicao = null;
+        document.querySelector(".btn-primary").textContent = "Adicionar Produto";
+        salvarNoLocalStorage();
+        renderizarTabela();
+        formProduto.reset();
     }
 });
 
-function adicionarNovaTarefa() {
-    const descricaoInput = campoTarefa.value;
+function renderizarTabela() {
+    const tbody = document.querySelector("#tabela-produtos tbody");
+    tbody.innerHTML = "";
 
-    try {
-        const novaTarefa = new Tarefa(descricaoInput);
-        listaDeTarefas.push(novaTarefa);
-        
-        salvarNoLocalStorage(); // Salva no localStorage sempre que uma nova tarefa for adicionada
-        
-        renderizarLista();
-        campoTarefa.value = "";
-        campoTarefa.focus();
-    } catch (erro) {
-        alert(erro.message);
-    }
-}
+    let valorTotalEstoque = 0;
+    
 
-function renderizarLista() {
-    const listaUl = document.getElementById("lista-tarefas");
-    listaUl.innerHTML = "";
+    listaDeProdutos.forEach((produto, index) => {
+        const subtotal = produto.preco * produto.quantidade;
+        valorTotalEstoque += subtotal;
 
-    listaDeTarefas.forEach((tarefa, index) => {
-        const itemLista = document.createElement("li");
-        itemLista.className = "item-tarefa";
+        const tr = document.createElement("tr");
 
-        if (tarefa.concluida) {
-            itemLista.classList.add("concluido");
-        }
-
-        itemLista.innerHTML = `
-            <span class="texto-tarefa" onclick="alternarConclusao(${index})">${tarefa.descricao}</span>
-            <div class="acoes-tarefa">
-                <button class="botao-acao" onclick="alternarConclusao(${index})">
-                    <i class="fa-regular ${tarefa.concluida ? 'fa-circle-check' : 'fa-circle'}"></i>
-                </button>
-                <button class="botao-acao excluir" onclick="removerTarefa(${index})">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
+        // Desafio: Adicionar botão de Editar vinculado à função prepararEdicao(index)
+        tr.innerHTML = `
+            <td>${produto.nome}</td>
+            <td>R$ ${produto.preco.toFixed(2)}</td>
+            <td>${produto.quantidade}</td>
+            <td>R$ ${subtotal.toFixed(2)}</td>
+            <td>
+                <button class="btn-editar" onclick="prepararEdicao(${index})">Editar</button>
+                <button class="btn-remover" onclick="removerProduto(${index})">Excluir</button>
+            </td>
         `;
 
-        listaUl.appendChild(itemLista);
+        tbody.appendChild(tr);
     });
 
-    atualizarContador();
+    atualizarResumo(valorTotalEstoque);
 }
 
-function atualizarContador() {
-    const contadorElemento = document.getElementById("contador-tarefas");
-    const total = listaDeTarefas.length;
-
-    if (total === 1) {
-        contadorElemento.textContent = "1 tarefa na lista";
-    } else {
-        contadorElemento.textContent = `${total} tarefas na lista`;
-    }
+function atualizarResumo(total) {
+    const totalEstoqueElemento = document.getElementById("total-estoque");
+    totalEstoqueElemento.textContent = `Total em Estoque: R$ ${total.toFixed(2)}`;
 }
-
-function alternarConclusao(index) {
-    listaDeTarefas[index].alternarStatus();
-    salvarNoLocalStorage(); // Salva após alterar o status
-    renderizarLista();
-}
-
-function removerTarefa(index) {
-    listaDeTarefas.splice(index, 1);
-    salvarNoLocalStorage(); // Salva a nova lista após remover
-    renderizarLista();
-}
-
-const botaoTema = document.getElementById("botao-alterar-tema");
-
-botaoTema.addEventListener("click", () => {
-    document.body.classList.toggle("modo-escuro");
-
-    const icone = botaoTema.querySelector("i");
-    if (document.body.classList.contains("modo-escuro")) {
-        icone.className = "fa-solid fa-sun";
-    } else {
-        icone.className = "fa-solid fa-moon";
-    }
-});
 
 // Inicialização: Restaura os dados do localStorage e renderiza a tela ao abrir
 carregarDoLocalStorage();
-renderizarLista();
+renderizarTabela();

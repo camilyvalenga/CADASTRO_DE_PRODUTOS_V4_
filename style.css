@@ -1,4 +1,4 @@
-* body {
+body {
     font-family: Arial, Helvetica, sans-serif;
     background-image: url(q.jpg);
     background-position: center;
@@ -9,19 +9,13 @@
     padding: 20px;
 }
 
-
-.img3{
+.img3 {
     display: block;
     margin-left: auto;
     margin-right: auto;
     margin-top: 30px;
-    width: 300px; 
-    height: 300px; 
-
-}
-
-.balao{
-
+    width: 300px;
+    height: 300px;
 }
 
 .container {
@@ -91,7 +85,6 @@ button {
 
 .btn-danger {
     background-color: #242324;
-
     color: white;
 }
 
@@ -128,22 +121,34 @@ td {
 
 th {
     background-color: #967391;
-
     color: white;
 }
 
 tbody tr:nth-child(even) {
     background-color: #fffff0;
-    ;
 }
 
 .btn-remover {
-    background-color: #967391;
+    background-color: #d9534f;
     color: white;
     padding: 5px 10px;
     font-size: 12px;
+    border-radius: 4px;
 }
 
 .btn-remover:hover {
-    background-color: #967391;
+    background-color: #c9302c;
+}
+
+.btn-editar {
+    background-color: #f0ad4e;
+    color: white;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.btn-editar:hover {
+    background-color: #ec971f;
 }
