@@ -4,64 +4,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Estoque - POO</title>
+    <title>Cadastro de Produtos - V4</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-
     <div class="container">
-        <h1>𝙲𝚊𝚍𝚊𝚜𝚝𝚛𝚘 𝚍𝚎 𝙿𝚛𝚘𝚍𝚞𝚝𝚘𝚜</h1>
+        <h1>Cadastro de Produtos</h1>
 
         <!-- Formulário de Entrada -->
         <form id="produto-form">
             <div class="form-group">
                 <label for="nome">Nome do Produto:</label>
-                <input type="text" id="nome" placeholder="Ex. Notebook">
+                <input type="text" id="nome" placeholder="Ex. Notebook" required>
             </div>
 
             <div class="form-group">
-                <label for="preco">Preço (R$):</label>
-                <input type="number" id="preco" step="0.01" placeholder="Ex. 3500.00">
+                <label for="preco">Preço (R\$):</label>
+                <input type="number" id="preco" step="0.01" placeholder="Ex. 3500.00" required>
             </div>
 
             <div class="form-group">
                 <label for="quantidade">Quantidade:</label>
-                <input type="number" id="quantidade" placeholder="Ex. 5">
+                <input type="number" id="quantidade" placeholder="Ex. 5" required>
             </div>
 
             <button type="submit" class="btn-primary">Adicionar Produto</button>
         </form>
 
-        <!-- Cabeçalho de ações e resumo -->
-        <div class="resumo-container">
-            <h3 id="total-estoque">Total em Estoque: R$ 0,00</h3>
+        <!-- Seção de Listagem e Busca -->
+        <div class="estoque-secao">
+            <h2>Lista de Produtos</h2>
 
-            <button id="limpar-tabela" class="btn-danger">
-                Limpar Tudo
-            </button>
+            <!-- Campo de Busca Dinâmica (V4) -->
+            <div class="form-group" id="campo-busca-grupo">
+                <label for="campo-busca">Pesquisar Produto:</label>
+                <input type="text" id="campo-busca" placeholder="Digite o nome do produto para buscar...">
+            </div>
+
+            <table id="tabela-produtos">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Preço</th>
+                        <th>Qtd</th>
+                        <th>Subtotal</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os produtos serão injetados via JavaScript -->
+                </tbody>
+            </table>
+
+            <!-- Mensagem de feedback caso nenhum produto seja encontrado -->
+            <p id="mensagem-vazia" class="mensagem-vazia" style="display: none;">Nenhum produto foi encontrado.</p>
+
+            <h3 id="total-estoque">Total em Estoque: R\$ 0,00</h3>
+
+            <button id="limpar-tabela" class="btn-danger">Limpar Tudo</button>
         </div>
-
-        <!-- Tabela de Exibição -->
-        <table id="tabela-produtos">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Preço - Un.</th>
-                    <th>Qtd.</th>
-                    <th>Subtotal</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-            </tbody>
-        </table>
     </div>
 
     <img src="pinguimdigitando.jpg" alt="" class="img3">
     <h1 class="balao">cadastrando produtos...</h1>
+
+    <div class="container-imagens-pessoas">
+        <img src="IMG_1725.jpeg" alt="Foto 1" class="img4">
+        <img src="ccdr 2026-10-28 16073187AA575CAAF2.JPG" alt="Foto 2" class="img5">
+    </div>
+
+
 
     <script src="script.js"></script>
 </body>
