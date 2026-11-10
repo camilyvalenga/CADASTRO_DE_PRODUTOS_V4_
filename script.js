@@ -8,8 +8,14 @@ class Produto {
 
 const listaDeProdutos = [];
 let indiceEdicao = null; // null indica "Modo Cadastro", número indica "Modo Edição"
-
 const CHAVE_STORAGE = "sistema_estoque_produtos";
+
+// Instância do Modal do Bootstrap para controle via JS
+let meuModalConfirmacao;
+
+window.addEventListener('DOMContentLoaded', () => {
+    meuModalConfirmacao = new bootstrap.Modal(document.getElementById('modalConfirmacao'));
+});
 
 // Persistência com localStorage
 function salvarNoLocalStorage() {
@@ -30,6 +36,19 @@ function carregarDoLocalStorage() {
 const formProduto = document.getElementById("produto-form");
 const botaoLimparTabela = document.getElementById("limpar-tabela");
 const campoBusca = document.getElementById("campo-busca");
+const divMensagemErro = document.getElementById("mensagem-erro");
+
+// Função para exibir mensagens inline no formulário (Substitui os alerts)
+function mostrarErroInline(mensagem) {
+    if (divMensagemErro) {
+        divMensagemErro.textContent = mensagem;
+        divMensagemErro.classList.remove("d-none");
+        // Oculta após 4 segundos automaticamente
+        setTimeout(() => {
+            divMensagemErro.classList.add("d-none");
+        }, 4000);
+    }
+}
 
 // Evento de Submissão do Formulário (Cadastro / Edição)
 formProduto.addEventListener("submit", function (event) {
@@ -40,14 +59,17 @@ formProduto.addEventListener("submit", function (event) {
     const quantidade = parseInt(document.getElementById("quantidade").value);
 
     if (!nome) {
-        alert("Por favor, informe um nome válido para o produto.");
+        mostrarErroInline("Por favor, informe um nome válido para o produto.");
         return;
     }
 
     if (isNaN(preco) || preco <= 0 || isNaN(quantidade) || quantidade <= 0) {
-        alert("O preço e a quantidade devem ser valores numéricos maiores que zero.");
+        mostrarErroInline("O preço e a quantidade devem ser valores numéricos maiores que zero.");
         return;
     }
+
+    // Oculta erro caso esteja visível
+    divMensagemErro.classList.add("d-none");
 
     const novoProduto = new Produto(nome, preco, quantidade);
 
@@ -65,14 +87,14 @@ formProduto.addEventListener("submit", function (event) {
     document.getElementById("nome").focus();
 });
 
-// Evento de Digitação Dinâmica (V4)
+// Evento de Digitação Dinâmica
 if (campoBusca) {
     campoBusca.addEventListener("input", () => {
         renderizarTabela();
     });
 }
 
-// Função intermediária para filtrar produtos com .filter(), .toLowerCase() e .includes() (V4)
+// Função intermediária para filtrar produtos com .filter(), .toLowerCase() e .includes()
 function obterProdutosFiltrados() {
     const termoBusca = campoBusca ? campoBusca.value.toLowerCase().trim() : "";
     
@@ -93,31 +115,51 @@ function prepararEdicao(indexReal) {
     document.getElementById("nome").focus();
 }
 
-function removerProduto(indexReal) {
-    listaDeProdutos.splice(indexReal, 1);
+// Remoção assíncrona usando o Modal de Confirmação customizado
+function solicitarRemocao(indexReal) {
+    const textoModal = document.getElementById("modal-confirmacao-texto");
+    const btnConfirmar = document.getElementById("btn-modal-confirmar");
 
-    if (indiceEdicao === indexReal) {
-        indiceEdicao = null;
-        document.querySelector(".btn-primary").textContent = "Adicionar Produto";
-        formProduto.reset();
-    } else if (indiceEdicao > indexReal) {
-        indiceEdicao--;
-    }
+    textoModal.textContent = `Tem certeza que deseja excluir o produto "${listaDeProdutos[indexReal].nome}"?`;
+    
+    // Substitui o evento de clique do botão confirmar para esta ação específica
+    btnConfirmar.onclick = function () {
+        listaDeProdutos.splice(indexReal, 1);
 
-    salvarNoLocalStorage();
-    renderizarTabela();
+        if (indiceEdicao === indexReal) {
+            indiceEdicao = null;
+            document.querySelector(".btn-primary").textContent = "Adicionar Produto";
+            formProduto.reset();
+        } else if (indiceEdicao > indexReal) {
+            indiceEdicao--;
+        }
+
+        salvarNoLocalStorage();
+        renderizarTabela();
+        meuModalConfirmacao.hide();
+    };
+
+    meuModalConfirmacao.show();
 }
 
 if (botaoLimparTabela) {
     botaoLimparTabela.addEventListener("click", () => {
-        if (confirm("Tem certeza que deseja limpar todos os produtos?")) {
+        const textoModal = document.getElementById("modal-confirmacao-texto");
+        const btnConfirmar = document.getElementById("btn-modal-confirmar");
+
+        textoModal.textContent = "Tem certeza que deseja limpar todos os produtos do estoque?";
+        
+        btnConfirmar.onclick = function () {
             listaDeProdutos.length = 0;
             indiceEdicao = null;
             document.querySelector(".btn-primary").textContent = "Adicionar Produto";
             salvarNoLocalStorage();
             renderizarTabela();
             formProduto.reset();
-        }
+            meuModalConfirmacao.hide();
+        };
+
+        meuModalConfirmacao.show();
     });
 }
 
@@ -128,10 +170,8 @@ function renderizarTabela() {
     
     tbody.innerHTML = "";
 
-    // Obtém os produtos filtrados pela pesquisa atual (V4)
     const produtosFiltrados = obterProdutosFiltrados();
 
-    // Controle de exibição da mensagem caso nenhum item seja encontrado
     if (produtosFiltrados.length === 0) {
         if (mensagemVazia) mensagemVazia.style.display = "block";
     } else {
@@ -139,7 +179,6 @@ function renderizarTabela() {
     }
 
     produtosFiltrados.forEach((produto) => {
-        // Encontra o índice real correspondente no array principal `listaDeProdutos`
         const indexReal = listaDeProdutos.indexOf(produto);
         const subtotal = produto.preco * produto.quantidade;
 
@@ -152,14 +191,13 @@ function renderizarTabela() {
             <td>R$ ${subtotal.toFixed(2)}</td>
             <td>
                 <button class="btn-editar" onclick="prepararEdicao(${indexReal})">Editar</button>
-                <button class="btn-remover" onclick="removerProduto(${indexReal})">Excluir</button>
+                <button class="btn-remover" onclick="solicitarRemocao(${indexReal})">Excluir</button>
             </td>
         `;
 
         tbody.appendChild(tr);
     });
 
-    // Métricas Reativas usando .reduce() considerando unicamente os itens visíveis na tela (V4)
     const valorTotalEstoque = produtosFiltrados.reduce((total, p) => total + (p.preco * p.quantidade), 0);
     atualizarResumo(valorTotalEstoque);
 }
